@@ -1,0 +1,8 @@
+.vs
+FytSugar.Builder/bin
+FytSugar.Builder/obj
+FytSugarGeneration/bin
+FytSugarGeneration/obj
+FytSugarGeneration/wwwroot/.DS_Store
+FytSugarGeneration/.DS_Store
+.DS_Store

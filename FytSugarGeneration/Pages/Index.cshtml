@@ -1,0 +1,135 @@
+﻿@page
+@model IndexModel
+@{
+}
+<el-container>
+    <el-header>FytSugar代码生成工具</el-header>
+    <el-container>
+        <el-aside width="200px">
+            <el-menu>
+                <el-menu-item index="1">
+                    <i class="el-icon-menu"></i>
+                    <span slot="title">MySql</span>
+                </el-menu-item>
+            </el-menu>
+        </el-aside>
+        <el-main>
+            <el-form :inline="true" :model="formDb">
+                <el-form-item label="服务器地址：">
+                    <el-input v-model="formDb.ip" placeholder="Mysql服务IP地址"></el-input>
+                </el-form-item>
+                <el-form-item label="端口号：">
+                    <el-input v-model="formDb.port" placeholder="Mysql服务端口号"></el-input>
+                </el-form-item>
+                <el-form-item label="账号：">
+                    <el-input v-model="formDb.name" placeholder="数据库账号"></el-input>
+                </el-form-item>
+                <el-form-item label="密码：">
+                    <el-input v-model="formDb.password" placeholder="数据库密码"></el-input>
+                </el-form-item>
+                <el-form-item label="数据库名称：">
+                    <el-input v-model="formDb.dbName" placeholder="数据库名称"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" :loading="lineBtn" @@click="lineDb">连接数据库并加载表名</el-button>
+                    <el-button type="success" @@click="lineDefault">默认值</el-button>
+                </el-form-item>
+            </el-form>
+            <el-form ref="form" :model="form">
+                <el-form-item label="生成方式：">
+                    <el-radio-group v-model="form.types">
+                        <el-radio label="1">所有表</el-radio>
+                        <el-radio label="2">部分表</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="数据库表：">
+                    <el-checkbox-group v-model="form.checkedTable">
+                        <el-checkbox v-for="city in form.tableOptions" :label="city" :key="city">{{city}}</el-checkbox>
+                    </el-checkbox-group>
+                </el-form-item>
+                <el-form-item label="命名空间">
+                    <el-input v-model="form.namespace" style="width:300px;" placeholder="实体命名空间"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" icon="el-icon-document-copy" :loading="generateBtn" @@click="generateCode">生成代码</el-button>
+                </el-form-item>
+            </el-form>
+        </el-main>
+    </el-container>
+</el-container>
+@section Scripts{
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                formDb: {
+                    ip: '',
+                    port:'',
+                    name: '',
+                    password: '',
+                    dbName:''
+                },
+                lineBtn: false,
+                generateBtn:false,
+                form: {
+                    name: '',
+                    types: '1',
+                    namespace:'',
+                    checkedTable:[],
+                    tableOptions: []
+                }
+            }
+        },
+        methods: {
+            lineDb() {
+                this.lineBtn = true;
+                var that = this;
+                axios.get('?handler=table', { params: this.formDb })
+                    .then(function (response) {
+                        that.lineBtn = false;
+                        const res = response.data;
+                        if (res.code == 200) {
+                            that.form.tableOptions = res.data;
+                        } else {
+                            alert(res.message);
+                        }
+                    });
+            },
+            lineDefault() {
+                this.formDb.ip = 'localhost';
+                this.formDb.port = '3306';
+                this.formDb.name = 'root';
+                this.formDb.password = '123456';
+                this.formDb.dbName = 'fyt_sugar';
+            },
+            generateCode() {
+                this.generateBtn = true;
+                var that = this;
+                var param = { types: this.form.types, tableNames: this.form.checkedTable, namespace: this.form.namespace, connection: this.formDb };
+                console.log(param);
+                @*axios({
+                    method: 'post',
+                    url: '?handler=generate',
+                    data: param
+                }).then((res) => {
+                    console.log(res);
+                });*@
+                axios.post('?handler=generate', param)
+                    .then(function (response) {
+                        that.generateBtn = false;
+                        const res = response.data;
+                        console.log(res);
+                        if (res.code == 200) {
+                            console.log(res.data);
+                        } else {
+                            alert(res.message);
+                        }
+                    });
+                
+            },
+
+        }
+    })
+</script>
+}
