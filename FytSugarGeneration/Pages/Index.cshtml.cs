@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using FytSugar.Builder;
+using System.IO;
 
 namespace FytSugarGeneration.Pages
 {
@@ -28,9 +29,25 @@ namespace FytSugarGeneration.Pages
             return new JsonResult(_builderService.InitConnection(param));
         }
 
+        public async Task<FileStreamResult> OnGetDownAsync([FromQuery] string filename)
+        {
+            var memoryStream = new MemoryStream();
+            using (var stream = new FileStream(FileHelper.MapPath("/wwwroot/generate/zip/"+filename+".zip"), FileMode.Open))
+            {
+                await stream.CopyToAsync(memoryStream);
+            }
+            memoryStream.Seek(0, SeekOrigin.Begin);
+            return new FileStreamResult(memoryStream, "application/octet-stream");
+        }
+
         public IActionResult OnPostGenerate([FromBody] BuilderModel createModel)
         {
             return new JsonResult(_builderService.CreateCode(createModel));
+        }
+
+        public void OnGetDelete()
+        {
+            FileHelper.DeleteDir("/wwwroot/generate");
         }
     }
 }

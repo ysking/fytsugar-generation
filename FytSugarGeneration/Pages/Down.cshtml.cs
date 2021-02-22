@@ -11,11 +11,15 @@ namespace FytSugarGeneration.Pages
 {
     public class DownModel : PageModel
     {
-        public async void OnGetAsync(string folder)
+        public async Task<FileStreamResult> OnGet(string filename)
         {
-            var path = FileHelper.MapPath(folder);
-            using var stream = HttpContext.Response.BodyWriter.AsStream();
-            await FileHelper.ReadDirectoryToZipStreamAsync(new DirectoryInfo(path), stream);
+            var memoryStream = new MemoryStream();
+            using (var stream = new FileStream(FileHelper.MapPath("/wwwroot/generate/zip/" + filename + ".zip"), FileMode.Open))
+            {
+                await stream.CopyToAsync(memoryStream);
+            }
+            memoryStream.Seek(0, SeekOrigin.Begin);
+            return new FileStreamResult(memoryStream, "application/octet-stream");
         }
     }
 }

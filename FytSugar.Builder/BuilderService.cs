@@ -2,19 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using Masuit.Tools;
+using Masuit.Tools.DateTimeExt;
 using Masuit.Tools.Files;
-using Masuit.Tools.Strings;
 
 namespace FytSugar.Builder
 {
     public class BuilderService:IBuilderService
     {
-        private readonly ISevenZipCompressor _sevenZipCompressor;
-        public BuilderService(ISevenZipCompressor sevenZipCompressor)
-        {
-            _sevenZipCompressor = sevenZipCompressor;
-        }
-
         /// <summary>
         /// 连接数据库，并返回当前连接下所有数据库名字
         /// </summary>
@@ -43,14 +37,21 @@ namespace FytSugar.Builder
             var result = JResult<string>.Success();
             try
             {
+                var _tempPath = DateTime.Now.GetTotalMilliseconds().ToString();
+                var path = "/wwwroot/generate/" + _tempPath;
+                FileHelper.CreateFiles("/wwwroot/generate/zip/");
                 var db = new SugarInstance().GetInstance(createModel.connection);
                 //读取模板
                 var strTemp = FileHelper.ReadFile("/Template/Model.html");
+                //仓储接口
+                var irepositoryTemp = FileHelper.ReadFile("/Template/IRepository.html");
+                //仓储实现
+                var repositoryTemp = FileHelper.ReadFile("/Template/Repository.html");
                 foreach (var row in createModel.TableNames)
                 {
                     var column = db.DbMaintenance.GetColumnInfosByTableName(row);
                     //构建属性
-                    var attrStr = "";
+                    string attrStr = "", tableColumn="";
                     foreach (var item in column)
                     {
                         attrStr += "        /// <summary>\r\n";
@@ -63,16 +64,27 @@ namespace FytSugar.Builder
                         attrStr += "        public " + item.DataType.ConvertModelType() + " " + item.DbColumnName + " { get; set; }" + item.DataType.ModelDefaultValue(item.DefaultValue) + "\r\n\r\n";
                     }
                     var modelName = row.TableName();
-                    strTemp = strTemp
+                    tableColumn = strTemp
                        .Replace("{NameSpace}", "FytSoa.Domain.Models."+createModel.Namespace)
                        .Replace("{DataTable}", row)
                        .Replace("{TableName}", modelName)
                        .Replace("{AttributeList}", attrStr);
                     //写入文件
-                    var path = "/wwwroot/generate/" + DateTime.Now.ToString("yyyyMMdd");
-                    FileHelper.WriteFile(path + "/Model/", modelName + ".cs", strTemp);
-                    result.Data = path;
+                    FileHelper.WriteFile(path + "/Model/", modelName + ".cs", tableColumn);
+
+                    //仓储接口
+                    string irepositoryString = irepositoryTemp.Replace("{NameSpace}",createModel.Namespace)
+                        .Replace("{TableName}",modelName);
+                    FileHelper.WriteFile(path + "/IRepository/", "I"+modelName + "Repository.cs", irepositoryString);
+
+                    //仓储实现
+                    string repositoryString = repositoryTemp.Replace("{NameSpace}", createModel.Namespace)
+                        .Replace("{TableName}", modelName);
+                    FileHelper.WriteFile(path + "/Repository/", modelName + "Repository.cs", repositoryString);
                 }
+                var nowpath = FileHelper.MapPath("/wwwroot/generate/zip/"+ _tempPath + ".zip");
+                ZipHelper.CreateZip(FileHelper.MapPath(path), nowpath);
+                result.Data = _tempPath;
                 return result;
             }
             catch (Exception ex)

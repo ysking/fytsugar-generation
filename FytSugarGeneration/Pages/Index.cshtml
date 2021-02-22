@@ -51,7 +51,8 @@
                     <el-input v-model="form.namespace" style="width:300px;" placeholder="实体命名空间"></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" icon="el-icon-document-copy" :loading="generateBtn" @@click="generateCode">生成代码</el-button>
+                    <el-button type="primary" icon="el-icon-document-copy" :loading="generateBtn" @@click="generateCode">生成代码并下载</el-button>
+                    <el-button type="danger" icon="el-icon-delete" @@click="generateDelete">删除下载文件</el-button>
                 </el-form-item>
             </el-form>
         </el-main>
@@ -107,28 +108,34 @@
                 this.generateBtn = true;
                 var that = this;
                 var param = { types: this.form.types, tableNames: this.form.checkedTable, namespace: this.form.namespace, connection: this.formDb };
-                console.log(param);
-                @*axios({
-                    method: 'post',
-                    url: '?handler=generate',
-                    data: param
-                }).then((res) => {
-                    console.log(res);
-                });*@
                 axios.post('?handler=generate', param)
                     .then(function (response) {
                         that.generateBtn = false;
                         const res = response.data;
-                        console.log(res);
                         if (res.code == 200) {
-                            console.log(res.data);
+                            that.down(res.data);
                         } else {
                             alert(res.message);
                         }
                     });
                 
             },
-
+            down(fname) {
+                var downloadFileUrl = "/generate/zip/" + fname + ".zip";
+                var elemIF = document.createElement("iframe");
+                elemIF.src = downloadFileUrl;
+                elemIF.style.display = "none";
+                document.body.appendChild(elemIF);
+                setTimeout(function () {
+                    elemIF.remove();
+                }, 10000);
+            },
+            generateDelete() {
+                axios.get('?handler=delete')
+                    .then(function (response) {
+                        alert('删除成功~');
+                    });
+            }
         }
     })
 </script>

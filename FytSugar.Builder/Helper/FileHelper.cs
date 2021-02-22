@@ -32,6 +32,95 @@ namespace FytSugar.Builder
             return Path.Combine(_ContentRootPath, path.TrimStart('~', '/').Replace("/", DirectorySeparatorChar));
         }
 
+        #region 创建目录
+
+        /// <summary>
+        /// 创建.删除目录
+        /// </summary>
+        /// <param name="path">路径</param>
+        public static void CreateFiles(string path)
+        {
+            try
+            {
+                if (IsDirectory(MapPath(path)))
+                    Directory.CreateDirectory(MapPath(path));
+                else
+                    File.Create(MapPath(path)).Dispose();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 直接删除指定目录下的所有文件及文件夹(保留目录)
+        /// </summary>
+        /// <param name="file"></param>
+        public static void DeleteDir(string file)
+        {
+            try
+            {
+                var path = MapPath(file);
+                //去除文件夹和子文件的只读属性
+                //去除文件夹的只读属性
+                DirectoryInfo fileInfo = new DirectoryInfo(path)
+                {
+                    Attributes = FileAttributes.Normal & FileAttributes.Directory
+                };
+                //去除文件的只读属性
+                File.SetAttributes(path, FileAttributes.Normal);
+                //判断文件夹是否还存在
+                if (Directory.Exists(path))
+                {
+                    foreach (string f in Directory.GetFileSystemEntries(path))
+                    {
+                        if (File.Exists(f))
+                        {
+                            //如果有子文件删除文件
+                            File.Delete(f);
+                            Console.WriteLine(f);
+                        }
+                        else
+                        {
+                            //循环递归删除子文件夹
+                            DeleteDir(f);
+                        }
+                    }
+                    //删除空文件夹
+                    Directory.Delete(path);
+                }
+
+            }
+            catch (Exception ex) // 异常处理
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 检测指定路径是否存在
+        /// </summary>
+        /// <param name="path">路径</param>
+        /// <returns></returns>
+        public static bool IsExist(string path)
+        {
+            return IsDirectory(MapPath(path)) ? Directory.Exists(MapPath(path)) : File.Exists(MapPath(path));
+        }
+        /// <summary>
+        /// 是否为目录或文件夹
+        /// </summary>
+        /// <param name="path">路径</param>
+        /// <returns></returns>
+        public static bool IsDirectory(string path)
+        {
+            if (path.EndsWith(DirectorySeparatorChar))
+                return true;
+            else
+                return false;
+        }
+        #endregion
+
         #region 读取/写入文件
         public static string ReadFile(string fullName)
         {
@@ -82,35 +171,5 @@ namespace FytSugar.Builder
             }
         }
         #endregion
-
-        /// <summary>
-        /// 将一个文件夹的内容读取为 Stream 的压缩包
-        /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="stream"></param>
-        public static async Task ReadDirectoryToZipStreamAsync(DirectoryInfo directory, Stream stream)
-        {
-            var fileList = directory.GetFiles();
-
-            using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Create);
-            foreach (var file in fileList)
-            {
-                var relativePath = file.FullName.Replace(directory.FullName, "");
-                if (relativePath.StartsWith("\\") || relativePath.StartsWith("//"))
-                {
-                    relativePath = relativePath.Substring(1);
-                }
-
-                var zipArchiveEntry = zipArchive.CreateEntry(relativePath, CompressionLevel.NoCompression);
-
-                using (var entryStream = zipArchiveEntry.Open())
-                {
-                    using var toZipStream = file.OpenRead();
-                    await toZipStream.CopyToAsync(stream);
-                }
-
-                await stream.FlushAsync();
-            }
-        }
     }
 }

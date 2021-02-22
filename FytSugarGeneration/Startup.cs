@@ -11,7 +11,6 @@ using Microsoft.Extensions.Hosting;
 using FytSugar.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using Masuit.Tools.Core.AspNetCore;
 
 namespace FytSugarGeneration
 {
@@ -28,7 +27,6 @@ namespace FytSugarGeneration
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IBuilderService, BuilderService>();
-            services.AddSevenZipCompressor();
             services.AddRazorPages().AddRazorPagesOptions(o => { o.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute()); }); ;
         }
 
