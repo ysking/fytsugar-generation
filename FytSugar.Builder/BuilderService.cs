@@ -47,7 +47,20 @@ namespace FytSugar.Builder
                 var irepositoryTemp = FileHelper.ReadFile("/Template/IRepository.html");
                 //仓储实现
                 var repositoryTemp = FileHelper.ReadFile("/Template/Repository.html");
-                foreach (var row in createModel.TableNames)
+                //服务接口
+                var iserviceTemp = FileHelper.ReadFile("/Template/IService.html");
+                //服务实现
+                var serviceTemp = FileHelper.ReadFile("/Template/Service.html");
+                var tableList = new List<string>();
+                if (createModel.Types==1)
+                {
+                    tableList= db.DbMaintenance.GetTableInfoList().Select(m => m.Name).ToList();
+                }
+                else
+                {
+                    tableList = createModel.TableNames.ToList();
+                }
+                foreach (var row in tableList)
                 {
                     var column = db.DbMaintenance.GetColumnInfosByTableName(row);
                     //构建属性
@@ -81,6 +94,16 @@ namespace FytSugar.Builder
                     string repositoryString = repositoryTemp.Replace("{NameSpace}", createModel.Namespace)
                         .Replace("{TableName}", modelName);
                     FileHelper.WriteFile(path + "/Repository/", modelName + "Repository.cs", repositoryString);
+
+                    //服务接口
+                    string iserviceString = iserviceTemp.Replace("{NameSpace}", createModel.Namespace)
+                        .Replace("{TableName}", modelName);
+                    FileHelper.WriteFile(path + "/IService/", "I" + modelName + "Service.cs", iserviceString);
+
+                    //服务实现
+                    string serviceString = serviceTemp.Replace("{NameSpace}", createModel.Namespace)
+                        .Replace("{TableName}", modelName);
+                    FileHelper.WriteFile(path + "/Service/", modelName + "Service.cs", serviceString);
                 }
                 var nowpath = FileHelper.MapPath("/wwwroot/generate/zip/"+ _tempPath + ".zip");
                 ZipHelper.CreateZip(FileHelper.MapPath(path), nowpath);

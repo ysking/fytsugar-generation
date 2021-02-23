@@ -59,42 +59,32 @@ namespace FytSugar.Builder
         /// <param name="file"></param>
         public static void DeleteDir(string file)
         {
-            try
+            //去除文件夹和子文件的只读属性
+            //去除文件夹的只读属性
+            DirectoryInfo fileInfo = new DirectoryInfo(file)
             {
-                var path = MapPath(file);
-                //去除文件夹和子文件的只读属性
-                //去除文件夹的只读属性
-                DirectoryInfo fileInfo = new DirectoryInfo(path)
+                Attributes = FileAttributes.Normal & FileAttributes.Directory
+            };
+            //去除文件的只读属性
+            File.SetAttributes(file, FileAttributes.Normal);
+            //判断文件夹是否还存在
+            if (Directory.Exists(file))
+            {
+                foreach (string f in Directory.GetFileSystemEntries(file))
                 {
-                    Attributes = FileAttributes.Normal & FileAttributes.Directory
-                };
-                //去除文件的只读属性
-                File.SetAttributes(path, FileAttributes.Normal);
-                //判断文件夹是否还存在
-                if (Directory.Exists(path))
-                {
-                    foreach (string f in Directory.GetFileSystemEntries(path))
+                    if (File.Exists(f))
                     {
-                        if (File.Exists(f))
-                        {
-                            //如果有子文件删除文件
-                            File.Delete(f);
-                            Console.WriteLine(f);
-                        }
-                        else
-                        {
-                            //循环递归删除子文件夹
-                            DeleteDir(f);
-                        }
+                        //如果有子文件删除文件
+                        File.Delete(f);
                     }
-                    //删除空文件夹
-                    Directory.Delete(path);
+                    else
+                    {
+                        //循环递归删除子文件夹
+                        DeleteDir(f);
+                    }
                 }
-
-            }
-            catch (Exception ex) // 异常处理
-            {
-                throw ex;
+                //删除空文件夹
+                Directory.Delete(file);
             }
         }
 

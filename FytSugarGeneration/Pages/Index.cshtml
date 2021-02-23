@@ -51,8 +51,8 @@
                     <el-input v-model="form.namespace" style="width:300px;" placeholder="实体命名空间"></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" icon="el-icon-document-copy" :loading="generateBtn" @@click="generateCode">生成代码并下载</el-button>
-                    <el-button type="danger" icon="el-icon-delete" @@click="generateDelete">删除下载文件</el-button>
+                    <el-button type="primary" icon="el-icon-document-copy" :disabled="generateDisabled" :loading="generateBtn" @@click="generateCode">生成代码并下载</el-button>
+                    <el-button type="danger" icon="el-icon-delete" :disabled="generateDisabled" @@click="generateDelete">删除下载文件</el-button>
                 </el-form-item>
             </el-form>
         </el-main>
@@ -72,7 +72,8 @@
                     dbName:''
                 },
                 lineBtn: false,
-                generateBtn:false,
+                generateBtn: false,
+                generateDisabled:true,
                 form: {
                     name: '',
                     types: '1',
@@ -84,6 +85,13 @@
         },
         methods: {
             lineDb() {
+                if (!this.formDb.ip) {
+                    this.$notify.error({
+                        title: '请输入服务器信息',
+                        message: res.message
+                    });
+                    return;
+                }
                 this.lineBtn = true;
                 var that = this;
                 axios.get('?handler=table', { params: this.formDb })
@@ -91,6 +99,7 @@
                         that.lineBtn = false;
                         const res = response.data;
                         if (res.code == 200) {
+                            that.generateDisabled = false;
                             that.form.tableOptions = res.data;
                         } else {
                             alert(res.message);
@@ -114,8 +123,16 @@
                         const res = response.data;
                         if (res.code == 200) {
                             that.down(res.data);
+                            that.$notify({
+                                title: '成功',
+                                message: '生成成功，准备下载~',
+                                type: 'success'
+                            });
                         } else {
-                            alert(res.message);
+                            that.$notify.error({
+                                title: '错误',
+                                message: res.message
+                            });
                         }
                     });
                 
@@ -131,9 +148,13 @@
                 }, 10000);
             },
             generateDelete() {
+                var that = this;
                 axios.get('?handler=delete')
                     .then(function (response) {
-                        alert('删除成功~');
+                        that.$notify.info({
+                            title: '消息',
+                            message: response.data == 200 ? '删除成功~' : response.data
+                        });
                     });
             }
         }

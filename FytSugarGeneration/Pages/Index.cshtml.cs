@@ -45,9 +45,18 @@ namespace FytSugarGeneration.Pages
             return new JsonResult(_builderService.CreateCode(createModel));
         }
 
-        public void OnGetDelete()
+        public IActionResult OnGetDelete()
         {
-            FileHelper.DeleteDir("/wwwroot/generate");
+            var str = "200";
+            try
+            {
+                FileHelper.DeleteDir(FileHelper.MapPath("wwwroot/generate/"));
+            }
+            catch (Exception ex)
+            {
+                str = ex.Message;
+            }
+            return new JsonResult(str);
         }
     }
 }
